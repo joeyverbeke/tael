@@ -1,0 +1,7 @@
+torch==2.4.0+cu118
+torchaudio==2.4.0+cu118
+torchvision==0.19.0+cu118
+transformers>=4.30.0
+python-osc
+opencv-python
+Pillow
