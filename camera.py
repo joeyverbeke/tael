@@ -2,11 +2,17 @@ import cv2
 from PIL import Image
 
 def capture_image():
-    """Capture an image from the webcam."""
-    cap = cv2.VideoCapture(0)  # 0 is usually the default camera
+    """Capture an image from the webcam at full resolution."""
+    cap = cv2.VideoCapture(0)
+
+    # Set the resolution to the maximum supported by your webcam
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
     ret, frame = cap.read()
     if not ret:
         print("Failed to capture image. Retrying...")
+        cap.release()
         return None
 
     # Convert the image to PIL format

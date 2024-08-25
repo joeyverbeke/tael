@@ -6,7 +6,7 @@ model_id = "microsoft/Phi-3.5-vision-instruct"
 # Load the model and processor
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
-    device_map="cuda",  # Change to "cpu" if not using CUDA
+    device_map="cuda",
     trust_remote_code=True,
     torch_dtype="auto",
     _attn_implementation='eager'
@@ -15,7 +15,7 @@ model = AutoModelForCausalLM.from_pretrained(
 processor = AutoProcessor.from_pretrained(
     model_id,
     trust_remote_code=True,
-    num_crops=16  # Adjusted for single-frame image
+    num_crops=16
 )
 
 def process_image(image):

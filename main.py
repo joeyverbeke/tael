@@ -1,7 +1,7 @@
 import time
 from pythonosc import udp_client
 from camera import capture_image
-from model import process_image
+from model_llava import process_image
 from utils import validate_transcription
 
 # Initialize the OSC client
