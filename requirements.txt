@@ -5,3 +5,4 @@ transformers>=4.30.0
 python-osc
 opencv-python
 Pillow
+accelerate
