@@ -3,6 +3,7 @@ from pythonosc import udp_client, dispatcher, osc_server
 from camera import capture_image
 from model_llava import process_image
 from utils import validate_transcription
+from urban_legends import urban_legends
 import threading
 import signal
 
@@ -10,99 +11,100 @@ import signal
 client = udp_client.SimpleUDPClient("127.0.0.1", 9000)
 client2 = udp_client.SimpleUDPClient("192.168.1.22", 9000)
 
-# Initialize conversation history
+# Initialize global state
+current_urban_legend_index = 0
+current_iteration = 0
+max_iterations = 5  # Maximum number of iterations per urban_legend
+max_time_per_urban_legend = 180  # 3 minutes in seconds
 last_valid_transcription = ""
-
-# Flag to control the start of the loop
 start_next_loop = threading.Event()
-first_run = True  # Flag to indicate the first run
-running = True  # Flag to control the main loop
+first_run = True
+running = True
 
 def on_osc_message(address, *args):
-    """Handle incoming OSC messages."""
+    """Handler for incoming OSC messages to start the next loop."""
     print(f"Received OSC message: {address}, {args}")
-    start_next_loop.set()  # Signal to start the next loop
-
-def initialize_osc_clients():
-    """Initialize the OSC clients."""
-    global client, client2
-    client = udp_client.SimpleUDPClient("127.0.0.1", 9000)
-    client2 = udp_client.SimpleUDPClient("192.168.1.22", 9000)
+    start_next_loop.set()
 
 def setup_osc_server():
-    """Setup and start the OSC server."""
-    global server, server_thread
+    """Set up the OSC server to listen for incoming messages."""
     osc_dispatcher = dispatcher.Dispatcher()
     osc_dispatcher.map("/start_next", on_osc_message)
     print("OSC server is set up to listen on /start_next")
 
-    server = osc_server.ThreadingOSCUDPServer(("0.0.0.0", 9001), osc_dispatcher)
-    server_thread = threading.Thread(target=server.serve_forever)
+    osc_server_instance = osc_server.ThreadingOSCUDPServer(("0.0.0.0", 9001), osc_dispatcher)
+    server_thread = threading.Thread(target=osc_server_instance.serve_forever)
     server_thread.start()
     print("OSC server is running and listening on port 9001")
-
-def wait_for_osc_signal():
-    """Wait for an OSC signal to start the next loop."""
-    print(f"Waiting for OSC message to start the next loop: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
-    start_next_loop.wait()
-    start_next_loop.clear()
-
-def capture_and_process_image():
-    """Capture an image from the webcam and process it using the model."""
-    global last_valid_transcription
-    start_time = time.time()
-    print(f"Taking picture: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
-
-    image = capture_image()
-    if image is None:
-        return
-
-    print(f"Starting inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
-    initial_transcription = process_image(image)
-    print(f"Finished inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
-
-    transcribed_text = validate_transcription(initial_transcription, last_valid_transcription)
-
-    if transcribed_text != last_valid_transcription:
-        last_valid_transcription = transcribed_text
-
-    print(transcribed_text)
-    return transcribed_text
-
-def send_transcription_to_clients(transcribed_text):
-    """Send the transcribed text to the OSC clients."""
-    client.send_message("/tael/text", transcribed_text)
-    client2.send_message("/tael/text", transcribed_text)
+    return osc_server_instance, server_thread
 
 def signal_handler(sig, frame):
-    """Handle SIGINT for graceful termination."""
+    """Handle termination signals to gracefully shut down."""
     global running
     print('Terminating the process...')
     running = False
-    start_next_loop.set()  # Unblock the wait call if blocked
+    start_next_loop.set()
 
-def main():
-    """Main function to run the loop."""
-    global first_run, running
+def process_urban_legend(urban_legend, is_first_time):
+    """Process a urban_legend of text and send it through OSC."""
+    global last_valid_transcription
+    if is_first_time:
+        # Send the original urban_legend text without modification
+        transcribed_text = urban_legend
+    else:
+        # Capture an image from the webcam
+        image = capture_image()
+        if image is None:
+            return
 
-    initialize_osc_clients()
-    setup_osc_server()
+        # Process the image with the model
+        initial_transcription = process_image(image)
+
+        # Validate the transcription
+        transcribed_text = validate_transcription(initial_transcription, last_valid_transcription)
+        if transcribed_text != last_valid_transcription:
+            last_valid_transcription = transcribed_text
+
+    print(transcribed_text)
+    client.send_message("/tael/text", transcribed_text)
+    client2.send_message("/tael/text", transcribed_text)
+
+def main_loop():
+    global first_run, current_iteration, current_urban_legend_index
+
+    osc_server_instance, server_thread = setup_osc_server()
     signal.signal(signal.SIGINT, signal_handler)
 
+    start_time = time.time()
+
     while running:
+        if current_iteration >= max_iterations or time.time() - start_time > max_time_per_urban_legend:
+            current_urban_legend_index = (current_urban_legend_index + 1) % len(urban_legends)
+            current_iteration = 0
+            first_run = True  # Reset for the new urban_legend
+            print(f"Moving to the next urban_legend: {urban_legends[current_urban_legend_index]}")
+
+            #reset time on next urban legend
+            start_time = time.time()
+
         if not first_run:
-            wait_for_osc_signal()
+            print(f"Waiting for OSC message to start the next loop: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
+            start_next_loop.wait()
+            start_next_loop.clear()
             if not running:
                 break
 
         first_run = False
-        transcribed_text = capture_and_process_image()
-        if transcribed_text:
-            send_transcription_to_clients(transcribed_text)
 
-    server.shutdown()
+        print(f"Processing urban_legend: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
+        process_urban_legend(urban_legends[current_urban_legend_index], current_iteration == 0)
+        
+        current_iteration += 1
+        print("urban legend index: ", current_urban_legend_index, "iteration: ", current_iteration, "time: ", time.time() - start_time)
+
+    osc_server_instance.shutdown()
     server_thread.join()
     print("OSC server has been shut down.")
 
 if __name__ == '__main__':
-    main()
+    main_loop()
