@@ -16,6 +16,7 @@ client2 = udp_client.SimpleUDPClient("192.168.1.22", 9000)
 # Initialize global state
 last_valid_transcription = ""
 start_next_loop = threading.Event()
+inference_time = 0
 first_run = True
 running = True
 debug = True
@@ -72,7 +73,11 @@ def process_urban_legend(urban_legend, is_first_time):
 def log_transcription(text):
     with open("transcription_log.txt", "a") as log_file:
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-        log_file.write(f"{timestamp} - {text}\n")
+        global inference_time
+        current_time = time.time()
+        inference_time = current_time - inference_time
+        log_file.write(f"{timestamp} | Inference: {inference_time}s | {text}\n")
+        inference_time = current_time
 
 def main_loop(urban_legend):
     global first_run, current_iteration, start_next_loop
@@ -84,6 +89,7 @@ def main_loop(urban_legend):
     current_iteration = 0
     max_iterations = 30  # Maximum number of iterations per urban_legend
     max_time_per_urban_legend = 300  # 5 minutes in seconds
+    inference_time = time.time()
 
     while running:
         if current_iteration >= max_iterations or time.time() - start_time > max_time_per_urban_legend:
