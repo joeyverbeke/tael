@@ -6,8 +6,10 @@ def capture_image():
     cap = cv2.VideoCapture(0)
 
     # Set the resolution to the maximum supported by your webcam
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944)
+    #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)
+    #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     ret, frame = cap.read()
     if not ret:
