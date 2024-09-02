@@ -1,5 +1,6 @@
 
 # T.A.E.L.
+A recursively degrading system, eating its own output as input, flattening the human stories it consumes.
 
 ## Prerequisities
 
