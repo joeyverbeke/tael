@@ -1,12 +1,9 @@
 import torch
 from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
 from PIL import Image
-from torch.cuda.amp import autocast  # Import for Automatic Mixed Precision
 
-# Enable cuDNN auto-tuner to find the best algorithm for your hardware.
 torch.backends.cudnn.benchmark = True
 
-# Load the processor and model
 model_id = "llava-hf/llava-v1.6-mistral-7b-hf"
 
 processor = LlavaNextProcessor.from_pretrained(model_id)
@@ -16,12 +13,12 @@ model = LlavaNextForConditionalGeneration.from_pretrained(
     torch_dtype=torch.float16,  # Use mixed precision for better performance
     low_cpu_mem_usage=True
 )
-model.to("cuda:0")  # Ensure the model is loaded onto the GPU
+model.to("cuda:0") 
 
 def process_image(image: Image.Image):
     """Generate a transcription from an image using the Llava model."""
     with torch.no_grad():
-        # Prepare the conversation prompt with [INST] tags
+        
         conversation = [
             {
                 "role": "user",
@@ -46,18 +43,15 @@ def process_image(image: Image.Image):
             "top_k": 30    # Top-k sampling for focused predictions
         }
 
-        # Use autocast for automatic mixed precision for better performance
+        
         with torch.autocast("cuda", dtype=torch.float16):
-            # Autoregressively complete the prompt
             output = model.generate(
                 **inputs,
                 **generation_args
             )
 
-        # Decode and process the output
         response = processor.decode(output[0], skip_special_tokens=True)
 
-        # Extract the transcribed text (after the prompt)
         transcribed_text = response.split("[/INST]")[-1].strip()
         
         return transcribed_text

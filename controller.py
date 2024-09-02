@@ -26,6 +26,6 @@ if __name__ == "__main__":
         # Periodically restart the process to clear memory
         if urban_legend_index % restart_threshold == 0:
             print("Restarting process to clear memory...")
-            process.terminate()  # Explicitly terminate the process
-            process.wait()  # Ensure the process has terminated
+            process.terminate() 
+            process.wait()
             continue

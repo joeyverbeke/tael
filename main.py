@@ -13,7 +13,6 @@ import gc
 client = udp_client.SimpleUDPClient("127.0.0.1", 9000)
 client2 = udp_client.SimpleUDPClient("192.168.1.22", 9000)
 
-# Initialize global state
 last_valid_transcription = ""
 start_next_loop = threading.Event()
 inference_time = 0
@@ -108,7 +107,6 @@ def main_loop(urban_legend):
         process_urban_legend(urban_legend, current_iteration == 0)
         current_iteration += 1
 
-        # Explicit memory cleanup after every iteration
         torch.cuda.empty_cache()
         gc.collect()
         
