@@ -31,6 +31,7 @@ def process_image(image: Image.Image):
         prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
         inputs = processor(prompt, image, return_tensors="pt").to("cuda:0")
 
+        
         # Define generation arguments
         generation_args = {
             "max_new_tokens": 200,  # Prevent cutting off
@@ -38,11 +39,8 @@ def process_image(image: Image.Image):
             "length_penalty": 0.9,  # Balance between conciseness and completeness
             "eos_token_id": processor.tokenizer.eos_token_id,  # Correct end-of-sequence token
             "num_beams": 3,  # Beam search for better accuracy
-            "temperature": 0.7,  # Lower temperature for more deterministic output
-            "top_p": 0.85,  # Top-p sampling for controlled output diversity
-            "top_k": 30    # Top-k sampling for focused predictions
+            "do_sample": False
         }
-
         
         with torch.autocast("cuda", dtype=torch.float16):
             output = model.generate(
