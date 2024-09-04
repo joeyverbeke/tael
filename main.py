@@ -15,7 +15,7 @@ client2 = udp_client.SimpleUDPClient("192.168.1.174", 9000)
 
 last_valid_transcription = ""
 start_next_loop = threading.Event()
-inference_time = time.time()
+loop_time = time.time()
 first_run = True
 running = True
 debug = True
@@ -62,6 +62,7 @@ def process_urban_legend(urban_legend, is_first_time, camera, urban_legend_index
     global last_valid_transcription, move_to_next_legend
 
     start_time = time.time()
+    inference_time = 0
 
     if is_first_time:
         transcribed_text = urban_legend
@@ -82,12 +83,13 @@ def process_urban_legend(urban_legend, is_first_time, camera, urban_legend_index
                 inference_start_time = time.time()
                 initial_transcription = process_image(image)
                 inference_end_time = time.time()
+                inference_time = inference_end_time - inference_start_time
                 print(f"Finished inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} (Time taken: {inference_end_time - inference_start_time:.2f}s)")
 
             transcribed_text = validate_transcription(initial_transcription, last_valid_transcription)
     
         if len(transcribed_text.split()) < 20 or len(transcribed_text) == 0:
-            print("Text was too short, or empty:", len(transcribed_text))
+            print("Text was too short, or empty:", len(transcribed_text.split()))
             move_to_next_legend = True
         
         del image, initial_transcription
@@ -104,17 +106,17 @@ def process_urban_legend(urban_legend, is_first_time, camera, urban_legend_index
     client2.send_message(osc_address, transcribed_text)
 
     if debug:
-        log_transcription(transcribed_text)
+        log_transcription(transcribed_text, inference_time)
     
 
-def log_transcription(text):
+def log_transcription(text, inference_time):
     with open("transcription_log.txt", "a") as log_file:
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-        global inference_time
+        global loop_time
         current_time = time.time()
-        inference_time = current_time - inference_time
-        log_file.write(f"{timestamp} | Inference: {inference_time}s | {text}\n")
-        inference_time = current_time
+        loop_time = current_time - loop_time
+        log_file.write(f"{timestamp} | Loop: {loop_time}s | Inference: {inference_time}s | {text}\n")
+        loop_time = current_time
 
 def main_loop(urban_legend, urban_legend_index):
     global first_run, current_iteration, start_next_loop, move_to_next_legend
@@ -127,7 +129,6 @@ def main_loop(urban_legend, urban_legend_index):
     current_iteration = 0
     max_iterations = 20  # Maximum number of iterations per urban_legend
     max_time_per_urban_legend = 300  # 5 minutes in seconds
-    inference_time = time.time()
     iteration = 0  # Initialize iteration count
 
     while running:

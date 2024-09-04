@@ -6,7 +6,7 @@ import psutil
 
 # Configuration
 LOG_FILE = "transcription_log.txt"
-MAX_IDLE_TIME = 60  # 60 seconds
+MAX_IDLE_TIME = 90  # 60 seconds
 VENV_PATH = "tael"
 PYTHON_SCRIPT = "controller.py"
 INITIAL_DELAY = 60  # Initial delay to allow the system to stabilize (in seconds)

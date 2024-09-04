@@ -10,6 +10,8 @@ def validate_transcription(current_text, last_valid_text):
         "cannot transcribe",
         "the text in the image",
         "the image",
+        "i'm sorry",
+        "transcribe",
     ]
 
     # Check if the current text is valid

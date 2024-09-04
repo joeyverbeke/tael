@@ -1,4 +1,7 @@
 tael/
 __pycache__/
 Backup/
+stills/
+stills_noText/
 recursive-displace.toe
+tael.*
