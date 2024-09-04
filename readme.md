@@ -16,7 +16,7 @@ pip install -r requirements.txt --extra-index-url https://download.pytorch.org/w
 ## Run
 
 ```bash
-python controller.py
+python monitor_and_restart.py
 ```
 
 ## Structure

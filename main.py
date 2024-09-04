@@ -65,29 +65,30 @@ def process_urban_legend(urban_legend, is_first_time, camera, urban_legend_index
 
     if is_first_time:
         transcribed_text = urban_legend
+        last_valid_transcription = transcribed_text
     else:
         print(f"Taking image: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
         capture_start_time = time.time()
         image = camera.capture_image()
         capture_end_time = time.time()
         print(f"Image captured: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} (Time taken: {capture_end_time - capture_start_time:.2f}s)")
+        
         if image is None:
-            return
+            transcribed_text = last_valid_transcription
+            print("No image detected, using last transcript")
+        else:
+            with torch.no_grad():
+                print(f"Starting inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
+                inference_start_time = time.time()
+                initial_transcription = process_image(image)
+                inference_end_time = time.time()
+                print(f"Finished inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} (Time taken: {inference_end_time - inference_start_time:.2f}s)")
 
-        with torch.no_grad():
-            print(f"Starting inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
-            inference_start_time = time.time()
-            initial_transcription = process_image(image)
-            inference_end_time = time.time()
-            print(f"Finished inference: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} (Time taken: {inference_end_time - inference_start_time:.2f}s)")
-
-        transcribed_text = validate_transcription(initial_transcription, last_valid_transcription)
-
-        if transcribed_text != last_valid_transcription:
-            last_valid_transcription = transcribed_text
-            print("text length:", len(transcribed_text.split()))
-            if len(transcribed_text.split()) < 20:
-                move_to_next_legend = True
+            transcribed_text = validate_transcription(initial_transcription, last_valid_transcription)
+    
+        if len(transcribed_text.split()) < 20 or len(transcribed_text) == 0:
+            print("Text was too short, or empty:", len(transcribed_text))
+            move_to_next_legend = True
         
         del image, initial_transcription
         torch.cuda.empty_cache()
@@ -124,7 +125,7 @@ def main_loop(urban_legend, urban_legend_index):
 
     start_time = time.time()
     current_iteration = 0
-    max_iterations = 30  # Maximum number of iterations per urban_legend
+    max_iterations = 20  # Maximum number of iterations per urban_legend
     max_time_per_urban_legend = 300  # 5 minutes in seconds
     inference_time = time.time()
     iteration = 0  # Initialize iteration count
