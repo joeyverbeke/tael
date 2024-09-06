@@ -23,7 +23,7 @@ def process_image(image: Image.Image):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "[INST] <image>\nPlease transcribe the text in this image. Your response should be in the format of ONLY the transcribed text, with no quotation marks or other prefacing. [/INST]"},
+                    {"type": "text", "text": "[INST] <image>\nPlease transcribe the text in this image. Your response should be in the format of ONLY the transcribed text, with no quotation marks or other prefacing. The response should never be more than 100 words. [/INST]"},
                 ],
             },
         ]
@@ -51,5 +51,7 @@ def process_image(image: Image.Image):
         response = processor.decode(output[0], skip_special_tokens=True)
 
         transcribed_text = response.split("[/INST]")[-1].strip()
-        
+
+        print("~~~~actual response:", transcribed_text)
+
         return transcribed_text

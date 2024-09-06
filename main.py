@@ -11,7 +11,6 @@ import gc
 
 # Initialize the OSC client
 client = udp_client.SimpleUDPClient("127.0.0.1", 9000)
-client2 = udp_client.SimpleUDPClient("192.168.1.174", 9000)
 
 last_valid_transcription = ""
 start_next_loop = threading.Event()
@@ -103,8 +102,7 @@ def process_urban_legend(urban_legend, is_first_time, camera, urban_legend_index
 
     osc_address = f"/urban_legend/{urban_legend_index}"
     client.send_message(osc_address, transcribed_text)
-    client2.send_message(osc_address, transcribed_text)
-
+    
     if debug:
         log_transcription(transcribed_text, inference_time)
     
